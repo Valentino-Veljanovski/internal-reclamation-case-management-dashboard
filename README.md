@@ -21,9 +21,9 @@ built and operate in production.
 ## What this pattern solves
 
 A team handles operational cases (in this system, customer reclamations)
-across multiple regional offices. Each case has roughly 15 fields —
+across multiple regional offices. Each case has roughly 15 fields:
 project company, customer name, address, phone, priority, responsible
-person, status, value, payment date, notes — and lives in a spreadsheet
+person, status, value, payment date, notes, and lives in a spreadsheet
 the operations team already maintains.
 
 The team works in Slack all day. Asking them to also keep one spreadsheet
@@ -37,7 +37,7 @@ The pattern brings the spreadsheet into Slack:
   status. Buttons for `New`, `Search`, `Update`, `Report`, `Email`.
 - **Modals** open on button click. Structured fields, validated inputs,
   no free text where a dropdown will do.
-- **Excel via Microsoft Graph** is still the source of truth — the Slack
+- **Excel via Microsoft Graph** is still the source of truth, the Slack
   interface reads from and writes to the same workbook the team has used
   for years.
 - **Confirmation DMs** echo back the saved case so the user knows the
@@ -109,7 +109,7 @@ identifiers are removed, and comments are translated to English.
 ## Tech stack
 
 - **Orchestration:** n8n (cloud)
-- **UI:** Slack — App Home tab + modals + DMs
+- **UI:** Slack (App Home tab + modals + DMs)
 - **State:** Microsoft Excel via Microsoft Graph (one sheet per city)
 - **Optional LLM:** Azure OpenAI for email drafting (single agent,
   triggered by `@mention` inside a case thread)
