@@ -1,27 +1,27 @@
-# Slack-Based Case Management Pattern
+# Internal Reclamation Case Management Dashboard Pattern
 
-A reference for building an internal case-management tool inside Slack:
-App Home dashboard, structured modals for create / search / update,
-city-partitioned spreadsheet state via Microsoft Graph, periodic Slack
-DMs for reports, and an LLM email-drafting assistant that reads thread
-context.
+A sanitized reference architecture for an internal reclamation case
+management dashboard inside Slack: App Home overview, structured
+modals for create / search / update, region-partitioned spreadsheet
+state via Microsoft Graph, periodic Slack DMs for reports, and an
+LLM email-drafting assistant that reads thread context.
 
 This repository documents the architecture decisions, code patterns, and
 design trade-offs from a Slack-based internal case-management system I
-built and operate in production.
+built for an operational team.
 
-> Customer data, credentials, Slack workspace identifiers, user IDs, and
-> internal workbook references are not part of the public material. The
-> patterns and JavaScript helpers below are generalized: field names use
-> generic placeholders, project-specific identifiers are removed, and
-> comments are translated to English.
+> Customer data, secrets, Slack workspace identifiers, user IDs, internal
+> workbook references, and raw workflow exports are not part of the
+> public material. The patterns and JavaScript helpers below are
+> generalized: field names use generic placeholders, project-specific
+> identifiers are removed, and comments are translated to English.
 
 ---
 
 ## What this pattern solves
 
-A team handles operational cases (in this system, customer reclamations)
-across multiple regional offices. Each case has roughly 15 fields:
+A team handles operational reclamation cases across multiple regional
+offices. Each case has a structured set of fields:
 project company, customer name, address, phone, priority, responsible
 person, status, value, payment date, notes, and lives in a spreadsheet
 the operations team already maintains.
@@ -33,7 +33,7 @@ had time to re-open the sheet.
 
 The pattern brings the spreadsheet into Slack:
 
-- **App Home tab** displays a city-by-city dashboard with case counts per
+- **App Home tab** displays a region-by-region dashboard with case counts per
   status. Buttons for `New`, `Search`, `Update`, `Report`, `Email`.
 - **Modals** open on button click. Structured fields, validated inputs,
   no free text where a dropdown will do.
@@ -53,7 +53,7 @@ The pattern brings the spreadsheet into Slack:
 ```
 ┌────────────── Layer 1: Slack UI ──────────────────────────────┐
 │  App Home tab                                                  │
-│    └── per-city dashboard (status counts)                      │
+│    └── per-region dashboard (status counts)                      │
 │    └── action buttons: New / Search / Update / Report / Email  │
 │  Slack Modals (opened via trigger_id)                          │
 │  Slack DMs (confirmations and reports)                         │
@@ -64,7 +64,7 @@ The pattern brings the spreadsheet into Slack:
                           ▼
 ┌────────────── Layer 2: n8n Router ────────────────────────────┐
 │  Single Webhook node receives every interaction               │
-│  Parse payload → Whitelist check → Detect action + city       │
+│  Parse payload -> Whitelist check -> Detect action + region       │
 │  Switch dispatches to the matching branch:                    │
 │    new / search / update / search-view / email / summarize    │
 └────────────────────────────────────────────────────────────────┘
@@ -72,7 +72,7 @@ The pattern brings the spreadsheet into Slack:
                           ▼
 ┌────────────── Layer 3: Spreadsheet State ─────────────────────┐
 │  Microsoft Graph → Excel workbook                             │
-│    one worksheet per city: Berlin, Mainz, Köln, München, ...  │
+│    one worksheet per region: Region A, Region B, Region C, ...  │
 │  Each row is one case; columns map to modal fields            │
 └────────────────────────────────────────────────────────────────┘
 ```
@@ -97,12 +97,13 @@ See [`docs/architecture.md`](docs/architecture.md) for the full breakdown.
     ├── slack-modal-builder.js             ← Block Kit modal (search example)
     ├── slack-thread-context-extractor.js  ← read structured data from thread history
     ├── llm-agent-prompt-builder.js        ← assemble system prompt with case context
-    └── date-range-summary-aggregator.js   ← compute per-city report from sheet rows
+    └── date-range-summary-aggregator.js   ← compute per-region report from sheet rows
 ```
 
-All snippets come from production Code nodes, generalized for public
-release: field names use generic placeholders, project-specific
-identifiers are removed, and comments are translated to English.
+All snippets are sanitized n8n Code-node patterns generalized for
+public release: field names use generic placeholders,
+project-specific identifiers are removed, and comments are translated
+to English.
 
 ---
 
@@ -110,11 +111,11 @@ identifiers are removed, and comments are translated to English.
 
 - **Orchestration:** n8n (cloud)
 - **UI:** Slack (App Home tab + modals + DMs)
-- **State:** Microsoft Excel via Microsoft Graph (one sheet per city)
+- **State:** Microsoft Excel via Microsoft Graph (one sheet per region)
 - **Optional LLM:** Azure OpenAI for email drafting (single agent,
   triggered by `@mention` inside a case thread)
-- **Code:** in-node JavaScript across ~30 Code nodes, ~1,600 lines total
-  in the main workflow
+- **Code:** in-node JavaScript patterns for parsing, routing, modal
+  building, thread context extraction, and report aggregation
 
 ---
 
@@ -130,18 +131,19 @@ multi-tenant SaaS. Some explicit trade-offs:
   any external use.
 - **Excel is the bottleneck.** Microsoft Graph rate limits and Excel's
   workbook lock are the failure modes you'll hit first under load.
-- **One large workflow.** The interaction router is a single n8n workflow
-  with ~100 nodes. Splitting it is on the to-do list; the reason it stays
-  as one workflow today is documented in `docs/architecture.md`.
+- **One large workflow.** The interaction router is intentionally kept
+  as one workflow while the shared parser and dispatch logic remain
+  easier to maintain in one place. The trade-off is documented in
+  `docs/architecture.md`.
 
 ---
 
 ## About
 
 Built and maintained by [Valentino Veljanovski](https://valentinoveljanovski.de),
-automation developer based in München. The full case study for the
-production system this pattern came from is at
-[valentinoveljanovski.de/projects/reklamation](https://valentinoveljanovski.de/projects/reklamation).
+automation developer based in Germany. The full case study for the
+internal workflow this pattern came from is at
+[valentinoveljanovski.de/projects/internal-reclamation-case-management-dashboard](https://valentinoveljanovski.de/projects/internal-reclamation-case-management-dashboard).
 
 ---
 

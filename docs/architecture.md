@@ -3,14 +3,14 @@
 The system is split into two n8n workflows and one shared spreadsheet:
 
 1. **Home Tab workflow** — Slack `app_home_opened` event handler.
-   Reads case rows from each city's worksheet, computes status counts,
+   Reads case rows from each region's worksheet, computes status counts,
    renders the App Home blocks, publishes via `views.publish`.
 2. **Interaction workflow** — Slack interactions endpoint. Receives
    button clicks and modal submissions. Parses, validates, dispatches
    to the matching branch (new / search / update / report / email /
    AI-drafting), reads or writes the spreadsheet, sends a confirmation
    DM.
-3. **Excel workbook** — single workbook with one worksheet per city.
+3. **Excel workbook** — single workbook with one worksheet per region.
    Source of truth.
 
 ## Why two workflows instead of one
@@ -25,23 +25,22 @@ the interaction workflow grow without slowing down dashboard rendering.
 
 ## Why one big interaction workflow instead of many
 
-The interaction workflow has ~100 nodes covering 7+ action types
+The interaction workflow covers several action types
 (new, search, update, view-search, report, email, AI-draft). Each
 action shares a common front-end (parse Slack payload, check user
-whitelist, detect city, route by `action_id`) before branching. If
+whitelist, detect region, route by `action_id`) before branching. If
 each action type were its own workflow, the parsing-and-routing
 prefix would have to be duplicated five times, and the team would
 have to maintain five places where the user whitelist lives.
 
 The trade-off: the workflow is large enough that a single n8n canvas
-view shows it as a tangle. This is mitigated by clear node naming
+view can become visually dense. This is mitigated by clear node naming
 (every node has a descriptive name like "Parse Slack Payload",
 "Build Edit Modal", "Prepare New Excel Row") and a strict left-to-right
 data flow with explicit IF nodes labeled by callback.
 
-A future split, if the workflow grows past ~150 nodes, would put each
-action behind an `executeWorkflow` call, with the router workflow
-keeping only the parse-and-dispatch front-end.
+A future split would put each action behind an `executeWorkflow` call,
+with the router workflow keeping only the parse-and-dispatch front-end.
 
 ---
 
@@ -52,30 +51,30 @@ keeping only the parse-and-dispatch front-end.
 Rendered server-side per request. The Home Tab workflow:
 
 1. Receives the `app_home_opened` event.
-2. Reads each city's worksheet via Microsoft Graph (one HTTP request
-   per city — these run in parallel).
-3. For each city, counts rows by status: `In Arbeit`, `Erledigt`,
+2. Reads each region's worksheet via Microsoft Graph (one HTTP request
+   per region; these run in parallel).
+3. For each region, counts rows by status: `In Progress`, `Completed`,
    `On Hold`, `Storniert`.
-4. Builds Block Kit JSON: a header section per city, a
-   one-line stats summary, a row of action buttons for that city.
+4. Builds Block Kit JSON: a header section per region, a
+   one-line stats summary, a row of action buttons for that region.
 5. Calls `views.publish` to update the home tab.
 
-Each action button has an `action_id` like `new_berlin`,
-`search_mainz`, `report_all`. The prefix encodes the action; the
-suffix encodes the city. This keeps the parsing logic in the
-interaction workflow dead simple — split on `_`, the first part is
-the action, the rest is the city key.
+Each action button has an `action_id` like `new_region_a`,
+`search_region_b`, `report_all`. The prefix encodes the action; the
+suffix encodes the region. This keeps the parsing logic in the
+interaction workflow simple: split on `_`, the first part is the
+action, the rest is the region key.
 
 ### Modals
 
 Modals are built as Block Kit JSON in n8n Code nodes, then opened
 via `views.open` with a `trigger_id`. Common building blocks:
 
-- `static_select` for status, priority, city
+- `static_select` for status, priority, region
 - `datepicker` for report date / payment date
 - `users_select` for assigning a responsible team member
 - `plain_text_input` for free-text fields
-- A `private_metadata` JSON string carrying the city, action type,
+- A `private_metadata` JSON string carrying the region, action type,
   and originating user ID — read back when the modal submits
 
 `private_metadata` is the trick that makes one router workflow handle
@@ -121,15 +120,15 @@ Once parsed, the workflow uses an IF node per action type. Each branch:
    search results), a confirmation DM, or a report message.
 4. Calls `respondToWebhook` with a 200 to keep Slack happy.
 
-### City routing
+### Region routing
 
-City is detected at parse time from either the `action_id` suffix
-(button click) or `private_metadata.city` (modal submission). It's
+Region is detected at parse time from either the `action_id` suffix
+(button click) or `private_metadata.region` (modal submission). It's
 then used to choose:
 
 - The correct worksheet name in Microsoft Graph
 - The correct emoji prefix in Slack messages
-- The correct list of "all cities" rows when the action is `_all`
+- The correct list of "all regions" rows when the action is `_all`
 
 ---
 
@@ -137,7 +136,7 @@ then used to choose:
 
 ### Sheet structure
 
-Each city is a separate worksheet. Columns are fixed; rows are cases.
+Each region is a separate worksheet. Columns are fixed; rows are cases.
 Adding a new case is an append; updating a case is a `PATCH` on a
 specific row range.
 
@@ -151,14 +150,14 @@ needed to set values on it. The workflow:
 
 ### Search
 
-Search is implemented client-side: read all rows for the city, filter
+Search is implemented client-side: read all rows for the region, filter
 in JavaScript by partial match on company / customer / address. For
-the team's data volume (hundreds of rows per city) this is cheaper
+the team's data volume (hundreds of rows per region) this is cheaper
 than asking Microsoft Graph to do the filtering.
 
 ### Reports
 
-Reports aggregate across one city or all cities for a given date
+Reports aggregate across one region or all regions for a given date
 range. The aggregation is done in a single Code node after reading
 all relevant rows; output is a structured object that the next node
 formats into a Slack DM. See

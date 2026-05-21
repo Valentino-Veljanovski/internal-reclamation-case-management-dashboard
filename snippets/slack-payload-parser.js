@@ -9,14 +9,14 @@
  *
  *   1. Parses the JSON.
  *   2. Checks the requesting Slack user against an allow-list.
- *   3. Extracts the data needed to dispatch — action, city, view state,
- *      callback ID, trigger ID — into a flat object the rest of the
+ *   3. Extracts the data needed to dispatch - action, region, view state,
+ *      callback ID, trigger ID - into a flat object the rest of the
  *      workflow can branch on.
  *
- * Action-ID convention assumed by this parser: `<actionPrefix>_<cityKey>`
- *   examples:  new_berlin, search_mainz, report_all
+ * Action-ID convention assumed by this parser: `<actionPrefix>_<regionKey>`
+ *   examples: new_region_a, search_region_b, report_all
  *
- * For modal submissions, the city and action are read from the modal's
+ * For modal submissions, the region and action are read from the modal's
  * `private_metadata` JSON string instead.
  *
  * Used in: n8n Code node, immediately after the Slack interactions
@@ -25,7 +25,6 @@
 
 const body = $input.first().json.body;
 
-// ── Allow-list ───────────────────────────────────────────────
 // Hard-coded for a small closed team. For broader use, replace with
 // a Slack User Group lookup or a config-sheet check.
 const ALLOWED_USERS = [
@@ -50,7 +49,6 @@ if (!ALLOWED_USERS.includes(requestUserId)) {
   return [{ json: { blocked: true, userId: requestUserId } }];
 }
 
-// ── Parse the payload ────────────────────────────────────────
 let payload;
 try {
   payload =
@@ -66,23 +64,21 @@ const action = payload.actions?.[0] || {};
 const view = payload.view || {};
 const channelId = payload.channel?.id || "";
 
-// ── City key → canonical name ────────────────────────────────
 // Adjust this map to your operational regions.
-const cityMap = {
-  berlin: "Berlin",
-  mainz: "Mainz",
-  koeln: "Köln",
-  muenchen: "München",
-  stuttgart: "Stuttgart",
+const regionMap = {
+  region_a: "Region A",
+  region_b: "Region B",
+  region_c: "Region C",
+  region_d: "Region D",
+  region_e: "Region E",
 };
 
-let city = "";
+let region = "";
 let actionPrefix = "";
 const actionId = action.action_id || "";
 const actionValue = action.value || "";
 
 if (type === "block_actions") {
-  // Special-case action_ids that don't follow the city-suffix convention
   if (actionId === "email_send_confirm") {
     actionPrefix = "emailsend";
   } else if (actionId === "email_draft_change") {
@@ -90,22 +86,22 @@ if (type === "block_actions") {
   } else {
     const parts = actionId.split("_");
     actionPrefix = parts[0];
-    const cityKey = parts.slice(1).join("_");
-    city = cityMap[cityKey] || (cityKey === "all" ? "all" : cityKey);
+    const regionKey = parts.slice(1).join("_");
+    region =
+      regionMap[regionKey] || (regionKey === "all" ? "all" : regionKey);
   }
 }
 
 if (type === "view_submission") {
   try {
     const meta = JSON.parse(view.private_metadata || "{}");
-    city = meta.city || "";
+    region = meta.region || "";
     actionPrefix = meta.action || "";
   } catch (e) {
-    /* ignore — downstream will check for missing fields */
+    /* ignore - downstream will check for missing fields */
   }
 }
 
-// Re-parse private_metadata for downstream nodes that need it
 let rawMeta = {};
 try {
   rawMeta = JSON.parse(view.private_metadata || "{}");
@@ -119,7 +115,7 @@ return [
       type,
       rawMeta,
       actionPrefix,
-      city,
+      region,
       actionId,
       actionValue,
       channelId,

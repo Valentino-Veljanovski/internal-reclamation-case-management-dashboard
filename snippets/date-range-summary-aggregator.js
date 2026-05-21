@@ -42,7 +42,13 @@ const filterRegion = $("Parse Date Range").first().json.region;
 const userId = $("Parse Date Range").first().json.userId;
 
 // The region labels in the same order as the upstream merge produces.
-const regionLabels = ["Berlin", "Mainz", "Köln", "München", "Stuttgart"];
+const regionLabels = [
+  "Region A",
+  "Region B",
+  "Region C",
+  "Region D",
+  "Region E",
+];
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -158,7 +164,7 @@ for (let i = 0; i < allItems.length; i++) {
 // ── Format metadata ──────────────────────────────────────────
 
 const now = new Date().toLocaleString("de-DE", {
-  timeZone: "Europe/Berlin",
+  timeZone: "UTC",
   day: "2-digit",
   month: "2-digit",
   year: "numeric",

@@ -2,7 +2,7 @@
 
 The App Home tab is the bot's "home page" inside Slack — a dedicated
 view that the bot can render with arbitrary Block Kit content. For
-this case-management system, the App Home is used as a per-city
+this case-management system, the App Home is used as a per-region
 dashboard plus action-button launcher.
 
 ## What App Home is good for
@@ -44,14 +44,13 @@ emits one item per fired event.
 
 ## Reading source data
 
-For a per-city dashboard, the workflow reads each city's worksheet
+For a per-region dashboard, the workflow reads each region's worksheet
 from Microsoft Graph. A few details that bite if you skip them:
 
-- **Parallel HTTP requests.** Five cities × one Graph request each
+- **Parallel HTTP requests.** Multiple regions times one Graph request each
   is five sequential round-trips if you let n8n run them serially.
-  Each request is ~150–400ms; sequential = 1–2s; parallel = under
-  500ms. Use n8n's per-node parallel execution by branching the
-  input into five and merging back.
+  Use n8n's per-node parallel execution by branching the input into
+one branch per region and merging back.
 - **`usedRange` over `range`.** `usedRange` returns only the populated
   cells; `range` requires you to know the row count. With manually
   edited spreadsheets, row count is unstable.
@@ -70,14 +69,14 @@ this dashboard:
 ```js
 const blocks = [];
 
-for (const city of CITIES) {
-  const cityRows = readCityRows(city); // from Microsoft Graph
-  const counts = countByStatus(cityRows);
+for (const region of REGIONS) {
+  const regionRows = readRegionRows(region); // from Microsoft Graph
+  const counts = countByStatus(regionRows);
 
   blocks.push(
     {
       type: "header",
-      text: { type: "plain_text", text: `${cityEmoji[city]} ${city}` },
+      text: { type: "plain_text", text: `${regionIcon[region]} ${region}` },
     },
     {
       type: "section",
@@ -91,9 +90,9 @@ for (const city of CITIES) {
     {
       type: "actions",
       elements: [
-        button("New", `new_${cityKey(city)}`),
-        button("Search", `search_${cityKey(city)}`),
-        button("Update", `update_${cityKey(city)}`),
+        button("New", `new_${regionKey(region)}`),
+        button("Search", `search_${regionKey(region)}`),
+        button("Update", `update_${regionKey(region)}`),
       ],
     },
     { type: "divider" },
@@ -114,14 +113,13 @@ blocks.push(
 Two patterns in here worth highlighting:
 
 **Action-ID encoding.** Button `action_id` values follow
-`<action>_<cityKey>` so the interaction handler can split on `_` to
+`<action>_<regionKey>` so the interaction handler can split on `_` to
 recover both pieces. Single source of structure, no separate routing
 table to maintain.
 
-**Section ordering.** Header → stats → action buttons → divider, per
-city. The divider visually scopes each city's actions to that city's
+**Section ordering.** Header → stats → action buttons → divider, per region. The divider visually scopes each region's actions to that region's
 data, which prevents the user from clicking "New" thinking it'll
-create for whichever city they were last looking at.
+create for whichever region they were last looking at.
 
 ---
 
@@ -152,8 +150,8 @@ about Slack thinking you're spamming.
 
 | Failure | What you'll see | Mitigation |
 |---|---|---|
-| Microsoft Graph returns 401 | Empty Home tab | Refresh the OAuth token; n8n's built-in OAuth credentials handle this if configured |
-| One city's read fails, others succeed | Partial dashboard with the failed city missing | Catch per-branch in n8n; render an error placeholder block for the failed city instead of failing the whole render |
+| Microsoft Graph returns 401 | Empty Home tab | Refresh the OAuth connection; n8n's built-in OAuth handling covers this if configured |
+| One region read fails, others succeed | Partial dashboard with the failed region missing | Catch per-branch in n8n; render an error placeholder block for the failed region instead of failing the whole render |
 | Rate limit (429) from Slack | `views.publish` returns `ratelimited` | Slack rate-limits per-user; this matters only if you're calling `views.publish` outside the `app_home_opened` trigger. Inside the trigger, you're fine — Slack fires the event when the user is actually looking. |
-| Block Kit JSON exceeds 100 blocks | `views.publish` returns `invalid_blocks` | Split the dashboard, paginate, or aggregate cities under collapsible sections. The hard limit is 100 blocks per view. |
+| Block Kit JSON exceeds 100 blocks | `views.publish` returns `invalid_blocks` | Split the dashboard, paginate, or aggregate regions under collapsible sections. The hard limit is 100 blocks per view. |
 | User not in the workspace | `views.publish` returns `user_not_found` | Ignore — it's transient if the user just left the workspace |

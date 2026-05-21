@@ -13,7 +13,7 @@ The interaction-handling workflows for `new`, `search`, `update`,
 1. Receive the Slack interaction webhook
 2. Parse the URL-encoded `payload` field into JSON
 3. Check the requesting user's ID against an allow-list
-4. Detect the city from `action_id` or `private_metadata`
+4. Detect the region from `action_id` or `private_metadata`
 
 If each action lived in its own workflow, that prefix would have to
 be duplicated in five places, and changes to (e.g.) the user
@@ -21,11 +21,10 @@ allow-list would need to be applied five times. The shared prefix is
 dictated by Slack — every interaction has the same envelope — so
 sharing a single entry point is the natural shape.
 
-The downside is a workflow that grows large. Around 100 nodes it
-becomes harder to navigate visually; around 200 it's untenable. The
+The downside is a workflow that grows large. As the workflow grows, it becomes harder to navigate visually. The
 escape hatch is `executeWorkflow`: keep the parser + dispatcher in the
 router, move each action's logic into its own called workflow. The
-reason this system hasn't done that yet is documented in
+reason this system stayed as one workflow is documented in
 [`architecture.md`](./architecture.md#why-one-big-interaction-workflow-instead-of-many).
 
 ---
@@ -61,31 +60,31 @@ this system doesn't use.)
 
 ## Action-ID convention
 
-Button `action_id` values follow `<actionPrefix>_<cityKey>`:
+Button `action_id` values follow `<actionPrefix>_<regionKey>`:
 
 ```
-new_berlin
-search_mainz
-update_koeln
+new_region_a
+search_region_b
+update_region_c
 report_all
-email_muenchen
+email_region_a
 ```
 
 The parser splits on `_`, takes the first segment as the action
-prefix, joins the rest as the city key, and looks the city key up in
-a small map (`berlin → Berlin`, `koeln → Köln`, etc.) to recover the
-canonical city name with proper casing.
+prefix, joins the rest as the region key, and looks the region key up
+in a small map (`region_a -> Region A`, `region_b -> Region B`, etc.)
+to recover the canonical region name.
 
-For modal submissions, action and city come from the modal's
+For modal submissions, action and region come from the modal's
 `private_metadata` — a JSON string the workflow embedded when it
 opened the modal:
 
 ```js
 view: {
   type: "modal",
-  callback_id: "new_reklamation_submit",
+  callback_id: "new_case_submit",
   private_metadata: JSON.stringify({
-    city: "Berlin",
+    region: "Region A",
     action: "new",
     userId: requestUserId,
   }),
@@ -94,7 +93,7 @@ view: {
 ```
 
 When the modal submits, the parser reads `view.private_metadata`,
-JSON-parses it, and uses `city` and `action` to dispatch.
+JSON-parses it, and uses `region` and `action` to dispatch.
 
 The point of `private_metadata` is to round-trip context that's needed
 on submission but isn't visible to the user. Slack passes it back
@@ -111,7 +110,7 @@ After parsing, the workflow has these fields available:
 {
   type: 'block_actions' | 'view_submission',
   actionPrefix: 'new' | 'search' | 'update' | 'report' | 'email' | 'select' | 'emailsend',
-  city: 'Berlin' | 'Mainz' | ... | 'all',
+  region: 'Region A' | 'Region B' | ... | 'all',
   userId: 'U...',
   triggerId: '...',          // for opening modals
   callbackId: '...',          // for view_submission, identifies which modal
@@ -133,14 +132,14 @@ example:
 [Is type=block_actions AND actionPrefix=new?] ── true ──► [Open New modal]
     │ false
     ▼
-[Is type=view_submission AND callbackId=new_reklamation_submit?] ── true ──►
+[Is type=view_submission AND callbackId=new_case_submit?] ── true ──►
     [Build Excel row → Append to sheet → Send confirmation DM]
     │ false
     ▼
 [Is type=block_actions AND actionPrefix=search?] ── true ──► [Open Search modal]
     │ false
     ▼
-... etc, ~10 branches total
+... etc, several branches total
 ```
 
 This is more verbose than a Switch node, but it makes each branch's
@@ -159,7 +158,7 @@ header), and the user sees an error in their client.
 For interactions that finish quickly (open a modal, send a confirmation
 DM), the workflow returns 200 directly via `respondToWebhook`.
 
-For interactions that need to do real work (read 5 city sheets,
+For interactions that need to do real work (read several region sheets,
 aggregate, build a report), the pattern is:
 
 1. Return an immediate 200 to Slack.

@@ -3,14 +3,14 @@
  * =============================
  *
  * Builds a search-modal JSON object suitable for the Slack
- * `views.open` HTTP call. The same shape — with different fields —
+ * `views.open` HTTP call. The same shape - with different fields -
  * is used to build New / Update / Report / Email modals in the
- * production workflow.
+ * internal workflow.
  *
  * Key Block Kit conventions this snippet illustrates:
  *
  *   - `private_metadata` round-trips context that's needed when the
- *     modal submits but isn't visible to the user (here: city, action
+ *     modal submits but isn't visible to the user (here: region, action
  *     type, originating user ID). On submission, the parser reads this
  *     back to know which branch to dispatch into.
  *
@@ -25,25 +25,25 @@
  *
  *   - The modal is built as a plain JS object and passed to the next
  *     node, which calls `views.open`. Keeping the build separate from
- *     the API call makes the modal trivially testable — log the object,
+ *     the API call makes the modal trivially testable: log the object,
  *     paste it into Slack's Block Kit Builder, see what it looks like.
  *
  * Used in: n8n Code node, after the parser when actionPrefix === 'search'.
  *
- * Output: { modalBody } — pass to an HTTP Request node configured to
+ * Output: { modalBody } - pass to an HTTP Request node configured to
  *   POST to https://slack.com/api/views.open with this as the body.
  */
 
-const city = $json.city;
+const region = $json.region;
 const triggerId = $json.triggerId;
 const userId = $json.userId;
 
-const cityEmoji = {
-  Berlin: "🇩🇪",
-  Mainz: "🌊",
-  Köln: "🏰",
-  München: "🍺",
-  Stuttgart: "🏎️",
+const regionIcon = {
+  "Region A": "A",
+  "Region B": "B",
+  "Region C": "C",
+  "Region D": "D",
+  "Region E": "E",
 };
 
 const body = {
@@ -53,16 +53,16 @@ const body = {
     callback_id: "search_submit",
 
     // Round-trip context: parser will read this back on submission.
-    private_metadata: JSON.stringify({ city, action: "search", userId }),
+    private_metadata: JSON.stringify({ region, action: "search", userId }),
 
     title: {
       type: "plain_text",
-      text: "🔍 Search cases",
+      text: "Search cases",
       emoji: true,
     },
     submit: {
       type: "plain_text",
-      text: "🔍 Search",
+      text: "Search",
       emoji: true,
     },
     close: {
@@ -72,20 +72,18 @@ const body = {
     },
 
     blocks: [
-      // Header section: shows which city the user is searching in.
       {
         type: "section",
         text: {
           type: "mrkdwn",
           text:
-            `${cityEmoji[city] || "📍"}  *${city}*\n` +
+            `${regionIcon[region] || "Region"}  *${region}*\n` +
             "_Search by company, customer name, or address._",
         },
       },
 
       { type: "divider" },
 
-      // Single optional input. Empty submission = "show all".
       {
         type: "input",
         block_id: "search_term",
@@ -97,7 +95,7 @@ const body = {
         },
         hint: {
           type: "plain_text",
-          text: "💡 Leave empty to see all cases.",
+          text: "Leave empty to see all cases.",
           emoji: true,
         },
         element: {
@@ -105,7 +103,7 @@ const body = {
           action_id: "v",
           placeholder: {
             type: "plain_text",
-            text: "e.g. Acme GmbH, Müller, Hauptstraße...",
+            text: "e.g. Acme GmbH, Mueller, Main Street...",
           },
         },
       },

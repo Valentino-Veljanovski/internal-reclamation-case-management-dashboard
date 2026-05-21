@@ -85,11 +85,11 @@ if (!contextData.id && firstMsg.text) {
 
 // ── Method 3: scan every message ───────────────────────────────
 // Last-resort: someone replied to the thread with the JSON pasted
-// in. Look for a recognizable shape ("id" + "city" both present).
+// in. Look for a recognizable shape ("id" + "region" both present).
 if (!contextData.id) {
   for (const msg of messages) {
     const txt = (msg.text || "").toString();
-    if (txt.includes('"id"') && txt.includes('"city"')) {
+    if (txt.includes('"id"') && txt.includes('"region"')) {
       try {
         const start = txt.indexOf("{");
         const end = txt.lastIndexOf("}");
