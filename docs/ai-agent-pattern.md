@@ -1,4 +1,4 @@
-# LLM Agent Pattern — Slack Mention with Thread Context
+# LLM Agent Pattern, Slack Mention with Thread Context
 
 A focused use of an LLM agent inside an existing operational workflow:
 when a team member needs to email a customer about a case, they
@@ -19,12 +19,12 @@ Most of the workflow has no LLM.
   confirmation DM that contains the case's structured data (company,
   customer, address, status, value, etc.). Every subsequent message
   in the thread is about *this case*. The agent doesn't have to ask
-  "which customer?" — the case data is right there in the first
+  "which customer?", the case data is right there in the first
   message of the thread.
 - **The agent has one tool.** It can call the Outlook send-email
   endpoint. It cannot do anything else. This dramatically narrows
   what can go wrong. No "the agent went off and queried the database
-  six times" — there's no database tool to query.
+  six times", there's no database tool to query.
 - **The user is the gate.** The agent drafts; the user reviews; the
   user types `SEND`. No autonomous email sending. The agent's
   `tools` permission to call Outlook is conditional in the system
@@ -59,7 +59,7 @@ Most of the workflow has no LLM.
    e. Posts the LLM's reply back into the thread
 
 5. User iterates ("make it more formal" / "add Tuesday deadline")
-   — the loop runs again, with the new message in the history.
+  , the loop runs again, with the new message in the history.
 
 6. User finally types SEND.
    The agent receives "SEND", reads the system prompt's instruction
@@ -108,8 +108,8 @@ for the full implementation including field sanitization.
 A few things worth noting:
 
 **Customer fields go through a `sanitize()` helper.** Empty, `null`,
-or placeholder values (`-`) become `—` in the prompt rather than
-literal `null`. The agent reads "Phone: —" and understands that's a
+or placeholder values (`-`) become `` in the prompt rather than
+literal `null`. The agent reads "Phone:" and understands that's a
 missing value; it would have read "Phone: null" as a real value
 otherwise.
 
@@ -124,7 +124,7 @@ small cost of slightly larger prompts.
 **The tool binding is inside the n8n agent node.** The agent node has
 one tool: a Microsoft Outlook send-mail tool. The agent decides when
 to call it; n8n executes the call. The system prompt's `SEND` rule
-is the only thing telling the agent when to use the tool — there's
+is the only thing telling the agent when to use the tool, there's
 no explicit conditional in the workflow forcing the call.
 
 ---
@@ -133,19 +133,19 @@ no explicit conditional in the workflow forcing the call.
 
 | Failure | Cause | Mitigation |
 |---|---|---|
-| Agent drafts an email without an address | The case has no recipient address and the thread hasn't surfaced one | Rule 5 in the system prompt — "ASK FIRST". The agent should ask. If it skips this, treat it as a prompt-engineering bug and tighten rule 5. |
+| Agent drafts an email without an address | The case has no recipient address and the thread hasn't surfaced one | Rule 5 in the system prompt, "ASK FIRST". The agent should ask. If it skips this, treat it as a prompt-engineering bug and tighten rule 5. |
 | Agent sends prematurely | User typed something the agent interpreted as `SEND` | Make the trigger word case-sensitive and specific (e.g. `ABSENDEN` or `/SEND` rather than the English word `send`, which will appear in normal conversation) |
-| Agent hallucinates a customer field | A case field was missing from the system prompt | Verify the prompt-builder includes every field the agent might need. Use a sanitize default of `—` rather than empty string so the agent visibly sees what's missing. |
+| Agent hallucinates a customer field | A case field was missing from the system prompt | Verify the prompt-builder includes every field the agent might need. Use a sanitize default of `` rather than empty string so the agent visibly sees what's missing. |
 | Agent goes silent | API timeout or rate limit | Surface the error to the thread directly: "❌ Drafting failed: <error>". Don't fail silently. |
-| User leaves the thread mid-draft | Thread becomes stale | This is fine — the case data persists in Excel. When the user comes back, they can `@mention` again and the agent rebuilds context from scratch. No per-thread state to clean up. |
+| User leaves the thread mid-draft | Thread becomes stale | This is fine, the case data persists in Excel. When the user comes back, they can `@mention` again and the agent rebuilds context from scratch. No per-thread state to clean up. |
 
 ---
 
 ## What this pattern is NOT
 
-- Not a "case-management AI" — the agent doesn't decide case status,
+- Not a "case-management AI", the agent doesn't decide case status,
   priority, or routing.
-- Not a search interface — the agent has no read access to the
+- Not a search interface, the agent has no read access to the
   spreadsheet. It only knows about the case the thread is about.
-- Not free-form chat — the system prompt narrows it to email
+- Not free-form chat, the system prompt narrows it to email
   drafting; off-task input gets a polite redirect.

@@ -23,7 +23,7 @@
  *     parse defensively.
  *
  *   - Sheets may contain "section divider" rows that shouldn't be
- *     counted — recognized by a marker character in the first column
+ *     counted, recognized by a marker character in the first column
  *     or by the header row repeating in the middle of the data.
  *
  * Used in: n8n Code node, after parallel reads of each region's
@@ -31,7 +31,7 @@
  * the input array carries that region's rows under `.values`.
  *
  * Output: { results, grandTotalValue, grandTotalPaid, grandCount,
- * now, period, regionTitle, userId } — pass to a Slack-formatting
+ * now, period, regionTitle, userId }, pass to a Slack-formatting
  * node to build the summary DM.
  */
 
@@ -173,7 +173,7 @@ const now = new Date().toLocaleString("de-DE", {
 });
 
 const period =
-  dateFrom && dateTo ? `${dateFrom} — ${dateTo}` : "All time";
+  dateFrom && dateTo ? `${dateFrom}, ${dateTo}` : "All time";
 const regionTitle = filterRegion === "all" ? "All regions" : filterRegion;
 
 return [

@@ -1,7 +1,7 @@
 # Interaction Router Pattern
 
-A single n8n webhook receives every Slack interaction — button clicks,
-modal submissions, select-menu changes — and dispatches it to the
+A single n8n webhook receives every Slack interaction, button clicks,
+modal submissions, select-menu changes, and dispatches it to the
 matching action branch. This page describes how the router works,
 why it's structured this way, and the trade-offs.
 
@@ -18,7 +18,7 @@ The interaction-handling workflows for `new`, `search`, `update`,
 If each action lived in its own workflow, that prefix would have to
 be duplicated in five places, and changes to (e.g.) the user
 allow-list would need to be applied five times. The shared prefix is
-dictated by Slack — every interaction has the same envelope — so
+dictated by Slack, every interaction has the same envelope, so
 sharing a single entry point is the natural shape.
 
 The downside is a workflow that grows large. As the workflow grows, it becomes harder to navigate visually. The
@@ -47,13 +47,13 @@ manually. The parser snippet handles this.
 
 The two payload `type` values that matter:
 
-- **`block_actions`** — the user clicked a button or changed a select.
+- **`block_actions`**, the user clicked a button or changed a select.
   Look at `payload.actions[0]` for which one.
-- **`view_submission`** — the user submitted a modal. Look at
+- **`view_submission`**, the user submitted a modal. Look at
   `payload.view.state.values` for the field values, and
   `payload.view.callback_id` for which modal it was.
 
-(There are others — `view_closed`, `shortcut`, `message_action` — that
+(There are others, `view_closed`, `shortcut`, `message_action`, that
 this system doesn't use.)
 
 ---
@@ -76,7 +76,7 @@ in a small map (`region_a -> Region A`, `region_b -> Region B`, etc.)
 to recover the canonical region name.
 
 For modal submissions, action and region come from the modal's
-`private_metadata` — a JSON string the workflow embedded when it
+`private_metadata`, a JSON string the workflow embedded when it
 opened the modal:
 
 ```js

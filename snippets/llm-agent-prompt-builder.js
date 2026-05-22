@@ -18,7 +18,7 @@
  * Used in: n8n Code node, after the thread context extractor and
  * before the LangChain agent / Azure OpenAI Chat node.
  *
- * Output: { systemPrompt, chatInput, ...passthrough } — the agent
+ * Output: { systemPrompt, chatInput, ...passthrough }, the agent
  * node consumes systemPrompt as its system message and chatInput as
  * the user message.
  */
@@ -31,12 +31,12 @@ const c = contextData;
 
 /**
  * Render a value for the prompt. Empty / null / placeholder values
- * become an em-dash so the agent sees "Phone: —" (clearly missing)
+ * become an em-dash so the agent sees "Phone:" (clearly missing)
  * rather than "Phone: null" (which it would treat as a real value).
  */
 function s(val) {
   if (val === null || val === undefined || val === "" || val === "-") {
-    return "—";
+    return "";
   }
   return String(val).trim();
 }
@@ -57,7 +57,7 @@ const historyText =
         .join("\n")
     : "";
 
-// ── Trigger word — adjust per language. ──────────────────────
+// ── Trigger word, adjust per language. ──────────────────────
 // Keep this distinct from anything the user might type in normal
 // conversation; otherwise the agent sends prematurely.
 const SEND_TRIGGER = "SEND";
@@ -80,7 +80,7 @@ const systemPrompt =
   `- Notes: ${s(c.notes)}\n\n` +
   "OUTPUT RULES (always follow):\n" +
   "1. Reply in German.\n" +
-  "2. Formal tone — Sie / Ihr.\n" +
+  "2. Formal tone, Sie / Ihr.\n" +
   '3. Every email needs: "Betreff:" line, salutation, body, sign-off.\n' +
   "4. Sender block: [Company Name] | ops@example.com\n\n" +
   "WORKFLOW RULES:\n" +

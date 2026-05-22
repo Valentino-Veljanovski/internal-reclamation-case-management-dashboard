@@ -6,7 +6,7 @@
  * embeds structured data (e.g. a confirmation DM that includes the
  * full case as a JSON object inside a context block at the bottom),
  * we can later recover that data by reading the thread back and
- * parsing it out — without keeping any side-channel state.
+ * parsing it out, without keeping any side-channel state.
  *
  * This pattern is useful for:
  *   - LLM agents that need per-thread context (the case the user is

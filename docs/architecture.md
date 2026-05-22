@@ -2,15 +2,15 @@
 
 The system is split into two n8n workflows and one shared spreadsheet:
 
-1. **Home Tab workflow** — Slack `app_home_opened` event handler.
+1. **Home Tab workflow**, Slack `app_home_opened` event handler.
    Reads case rows from each region's worksheet, computes status counts,
    renders the App Home blocks, publishes via `views.publish`.
-2. **Interaction workflow** — Slack interactions endpoint. Receives
+2. **Interaction workflow**, Slack interactions endpoint. Receives
    button clicks and modal submissions. Parses, validates, dispatches
    to the matching branch (new / search / update / report / email /
    AI-drafting), reads or writes the spreadsheet, sends a confirmation
    DM.
-3. **Excel workbook** — single workbook with one worksheet per region.
+3. **Excel workbook**, single workbook with one worksheet per region.
    Source of truth.
 
 ## Why two workflows instead of one
@@ -44,7 +44,7 @@ with the router workflow keeping only the parse-and-dispatch front-end.
 
 ---
 
-## Layer 1 — Slack UI
+## Layer 1, Slack UI
 
 ### App Home tab
 
@@ -75,7 +75,7 @@ via `views.open` with a `trigger_id`. Common building blocks:
 - `users_select` for assigning a responsible team member
 - `plain_text_input` for free-text fields
 - A `private_metadata` JSON string carrying the region, action type,
-  and originating user ID — read back when the modal submits
+  and originating user ID, read back when the modal submits
 
 `private_metadata` is the trick that makes one router workflow handle
 modals from any branch without keeping any in-memory session state.
@@ -90,7 +90,7 @@ reliable signal that something went wrong.
 
 ---
 
-## Layer 2 — n8n Router
+## Layer 2, n8n Router
 
 ### Webhook entry
 
@@ -116,7 +116,7 @@ Once parsed, the workflow uses an IF node per action type. Each branch:
 1. Validates required fields from the modal `viewState` (or button
    `value`).
 2. Reads or writes the spreadsheet via Microsoft Graph.
-3. Builds a follow-up Slack response — either a new modal (e.g.
+3. Builds a follow-up Slack response, either a new modal (e.g.
    search results), a confirmation DM, or a report message.
 4. Calls `respondToWebhook` with a 200 to keep Slack happy.
 
@@ -132,7 +132,7 @@ then used to choose:
 
 ---
 
-## Layer 3 — Excel state
+## Layer 3, Excel state
 
 ### Sheet structure
 
@@ -165,7 +165,7 @@ formats into a Slack DM. See
 
 ---
 
-## Optional layer — LLM email assistant
+## Optional layer, LLM email assistant
 
 A separate branch of the interaction workflow handles `app_mention`
 events inside a case's thread. When a user `@`s the bot in a thread
