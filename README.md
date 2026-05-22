@@ -1,6 +1,6 @@
 # Internal Reclamation Case Management Dashboard Pattern
 
-A sanitized reference architecture for an internal reclamation case
+A public, employer-safe overview of an internal reclamation case
 management dashboard inside Slack: App Home overview, structured
 modals for create / search / update, region-partitioned spreadsheet
 state via Microsoft Graph, periodic Slack DMs for reports, and an
@@ -11,10 +11,10 @@ design trade-offs from a Slack-based internal case-management system I
 built for an operational team.
 
 > Customer data, secrets, Slack workspace identifiers, user IDs, internal
-> workbook references, and raw workflow exports are not part of the
-> public material. The patterns and JavaScript helpers below are
-> generalized: field names use generic placeholders, project-specific
-> identifiers are removed, and comments are translated to English.
+> workbook references, and raw workflow exports are not part of this
+> repository. The JavaScript helpers below are public-safe examples:
+> field names are neutral, project-specific identifiers are removed,
+> and comments are translated to English.
 
 ---
 
@@ -100,10 +100,9 @@ See [`docs/architecture.md`](docs/architecture.md) for the full breakdown.
     └── date-range-summary-aggregator.js   ← compute per-region report from sheet rows
 ```
 
-All snippets are sanitized n8n Code-node patterns generalized for
-public release: field names use generic placeholders,
-project-specific identifiers are removed, and comments are translated
-to English.
+The snippets are adapted from n8n Code-node work and prepared for
+public review: field names are neutral, project-specific identifiers
+are removed, and comments are translated to English.
 
 ---
 
@@ -149,8 +148,7 @@ internal workflow this pattern came from is at
 
 ## Viewing Notice
 
-This repository is published for portfolio demonstration and educational
-viewing only.
+This repository is published for public review during hiring and collaboration conversations.
 
 All code, documentation, diagrams, and content in this repository remain
 the intellectual property of the author. **All rights reserved.**
