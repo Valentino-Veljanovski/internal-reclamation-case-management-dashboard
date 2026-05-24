@@ -1,4 +1,4 @@
-# Internal Reclamation Case Management Dashboard Pattern
+# Internal Reclamation Case Management Snippets
 
 A public, employer-safe overview of an internal reclamation case
 management dashboard inside Slack: App Home overview, structured
